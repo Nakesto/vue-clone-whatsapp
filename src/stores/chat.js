@@ -1,12 +1,12 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 
-export const useChat = defineStore('chat', () => {
-    const socket = ref(null)
+export const useChat = defineStore("chat", () => {
+  const socket = ref(null);
 
-    const setSocket = (token) => {
-        socket.value = new WebSocket("ws://localhost:8080/api/ws?token=" + token)
-    }
+  const setSocket = (token) => {
+    socket.value = new WebSocket("ws://localhost:8080/api/ws?token=" + token);
+  };
 
-    return { socket, setSocket }
-})
+  return { socket, setSocket };
+});
