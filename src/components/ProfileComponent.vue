@@ -34,6 +34,7 @@
         />
         <div
           class="overlay flex column flex-center"
+          v-if="!loadPhoto"
           :style="[active ? { display: 'flex' } : { display: 'none' }]"
         >
           <q-icon name="image" color="white" size="25px"></q-icon>
@@ -42,6 +43,15 @@
           </p>
           <p class="text-white text-subtitle2 text-center">Click here</p>
         </div>
+        <q-inner-loading
+          :showing="loadPhoto"
+          :dark="true"
+          label="Please wait..."
+          label-class="text-white"
+          color="white"
+          style="border-radius: 100%"
+          label-style="font-size: 1.1em"
+        />
       </div>
     </div>
     <div class="q-px-lg">
@@ -51,16 +61,6 @@
         :borderless="!userInput"
         v-model="username"
       >
-        <template v-if="userInput" v-slot:append>
-          <q-icon
-            name="check"
-            @click="userInput = false"
-            class="cursor-pointer"
-          />
-        </template>
-        <template v-else v-slot:after>
-          <q-btn round dense flat icon="edit" @click="userInput = true" />
-        </template>
       </q-input>
       <p class="text-grey text-subtitle1 text-weight-medium">
         This is your username. This name will be visible to your WhatsApp
@@ -69,14 +69,18 @@
 
       <p class="text-teal text-subtitle1 text-weight-medium">Status</p>
       <q-input
-        :readonly="!statusInput"
+        :readonly="loadStatus ? true : !statusInput"
         :borderless="!statusInput"
         v-model="status"
       >
         <template v-if="statusInput" v-slot:append>
-          <q-icon
-            name="check"
-            @click="statusInput = false"
+          <q-btn
+            round
+            dense
+            flat
+            :loading="loadStatus"
+            icon="check"
+            @click="statusOnUpdate"
             class="cursor-pointer"
           />
         </template>
@@ -110,8 +114,10 @@ const auth = useAuthentication();
 const { user } = storeToRefs(auth);
 const { changeProfile, logout } = auth;
 const username = ref(user.value.user.username);
-const status = ref();
+const status = ref(user.value.user.status);
 const active = ref(false);
+const loadStatus = ref(false);
+const loadPhoto = ref(false);
 
 const pickFile = () => {
   fileRef.value.pickFiles();
@@ -122,6 +128,7 @@ const fileOnUpdate = async (selectedFile) => {
   form.append("photo", selectedFile);
 
   try {
+    loadPhoto.value = true;
     const result = await axiosInstance.put("/api/photoProfile", form, {
       headers: {
         Authorization: `Bearer ${user.value.token}`,
@@ -132,7 +139,41 @@ const fileOnUpdate = async (selectedFile) => {
     if (err.response.status === 401) {
       logout();
     }
-    console.log(err);
+  } finally {
+    loadPhoto.value = false;
+    active.value = false;
+  }
+};
+
+const statusOnUpdate = async () => {
+  if (status.value === "" || status.value === user.value.user.status) {
+    statusInput.value = false;
+    return;
+  }
+
+  try {
+    loadStatus.value = true;
+    const result = await axiosInstance.put(
+      "/api/status",
+      {
+        status: status.value,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${user.value.token}`,
+        },
+      }
+    );
+    if (result.status === 200) {
+      changeProfile("status", status.value);
+    }
+  } catch (err) {
+    if (err.response.status === 401) {
+      logout();
+    }
+  } finally {
+    statusInput.value = false;
+    loadStatus.value = false;
   }
 };
 </script>

@@ -142,7 +142,6 @@ watch(search, () => {
             },
           }
         );
-        console.log(result.data.users);
         people.value = [result.data.users];
       } catch (err) {
         people.value = [];
