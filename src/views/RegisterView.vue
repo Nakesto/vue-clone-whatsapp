@@ -24,6 +24,9 @@
           v-model="username"
           label="Username"
         ></q-input>
+        <p class="text-red" v-if="!validation.isUsername">
+          Username must be longer than 8 character and less than 16
+        </p>
         <q-input
           color="teal"
           class="q-mb-lg"
@@ -33,6 +36,9 @@
           label="Password"
           autocomplete
         ></q-input>
+        <p class="text-red" v-if="!validation.isPassword">
+          Password must be longer than 8 character and less than 16
+        </p>
         <div class="flex column flex-center">
           <div
             class="flex flex-center q-mb-md"
@@ -65,6 +71,9 @@
               <q-icon name="attach_file" />
             </template>
           </q-file>
+          <p class="text-red" v-if="!validation.isPhoto">
+            Your extension or size file is not correct
+          </p>
         </div>
         <q-btn
           :loading="isLoading"
@@ -93,6 +102,11 @@ import { useAuthentication } from "../stores/authentication";
 
 const username = ref("");
 const pass = ref("");
+const validation = ref({
+  isUsername: true,
+  isPassword: true,
+  isPhoto: true,
+});
 const photo = ref(null);
 const preview = ref(null);
 const auth = useAuthentication();
@@ -113,12 +127,39 @@ const signUp = () => {
   register(username.value, pass.value, photo.value[0]);
 };
 
+watch(username, () => {
+  if (username.value.length >= 8) {
+    if (username.value.length > 16) {
+      validation.value = { ...validation.value, isUsername: false };
+    } else {
+      validation.value = { ...validation.value, isUsername: true };
+    }
+  } else {
+    validation.value = { ...validation.value, isUsername: false };
+  }
+});
+
+watch(pass, () => {
+  if (pass.value.length >= 8) {
+    if (pass.value.length > 16) {
+      validation.value = { ...validation.value, isPassword: false };
+    } else {
+      validation.value = { ...validation.value, isPassword: true };
+    }
+  } else {
+    validation.value = { ...validation.value, isPassword: false };
+  }
+});
+
 watch(photo, () => {
   let file = photo.value;
   if (file && file[0]) {
     if (file[0]["type"] !== "image/jpeg" && file[0]["type"] !== "image/png") {
       photo.value = null;
+      validation.value = { ...validation.value, isPhoto: false };
       return;
+    } else {
+      validation.value = { ...validation.value, isPhoto: true };
     }
     let reader = new FileReader();
     reader.onload = (e) => {

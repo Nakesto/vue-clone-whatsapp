@@ -20,30 +20,21 @@
 
       <q-space />
 
-      <q-btn round flat icon="search" />
+      <q-btn round flat icon="search" @click="rightDrawerOpen = true" />
       <q-btn round flat>
         <q-icon name="attachment" class="rotate-135" />
       </q-btn>
       <q-btn round flat icon="more_vert">
         <q-menu auto-close :offset="[110, 0]">
           <q-list style="min-width: 150px">
-            <q-item clickable>
-              <q-item-section>Contact data</q-item-section>
+            <q-item clickable @click="">
+              <q-item-section>Clear Messages</q-item-section>
             </q-item>
-            <q-item clickable>
-              <q-item-section>Block</q-item-section>
+            <q-item clickable @click="currentConversationIndex = null">
+              <q-item-section>Close Chat</q-item-section>
             </q-item>
-            <q-item clickable>
-              <q-item-section>Select messages</q-item-section>
-            </q-item>
-            <q-item clickable>
-              <q-item-section>Silence</q-item-section>
-            </q-item>
-            <q-item clickable>
-              <q-item-section>Clear messages</q-item-section>
-            </q-item>
-            <q-item clickable>
-              <q-item-section>Erase messages</q-item-section>
+            <q-item clickable @click="">
+              <q-item-section>Delete Chat</q-item-section>
             </q-item>
           </q-list>
         </q-menu>
@@ -54,33 +45,18 @@
   <q-drawer
     class="rspsv"
     v-model="leftDrawerOpen"
-    :width="style.width > 1100 ? 480 : style.width > 800 ? 300 : 280"
+    :width="style.width > 1100 ? 350 : style.width > 800 ? 300 : 280"
     show-if-above
     bordered
     :breakpoint="700"
   >
     <q-toolbar class="bg-grey-3">
-      <q-avatar class="cursor-pointer">
+      <q-avatar class="cursor-pointer" @click="profileDrawerOpen = true">
         <img :src="user.user.photoURL" />
       </q-avatar>
       <q-space />
       <q-btn round flat icon="message" @click="addDrawerOpen = true" />
-      <q-btn round flat icon="more_vert">
-        <q-menu auto-close :offset="[110, 8]">
-          <q-list style="min-width: 150px">
-            <q-item clickable>
-              <q-item-section>New group</q-item-section>
-            </q-item>
-            <q-item clickable>
-              <q-item-section>Settings</q-item-section>
-            </q-item>
-            <q-item clickable @click="logout">
-              <q-item-section>Logout</q-item-section>
-            </q-item>
-          </q-list>
-        </q-menu>
-      </q-btn>
-
+      <q-btn round flat icon="logout" @click="logout"></q-btn>
       <q-btn
         round
         flat
@@ -134,8 +110,34 @@
 
           <q-item-section side>
             <q-item-label caption>
-              {{ new Date(conversation.last_message_time).getHours() }}:{{
-                new Date(conversation.last_message_time).getMinutes()
+              {{
+                new Date(
+                  new Date(
+                    conversation.last_message_time.split("T")[0]
+                  ).toLocaleDateString()
+                ) >
+                new Date(
+                  new Date(Date.now() - 864e5)
+                    .toLocaleDateString()
+                    .split("T")[0]
+                )
+                  ? new Date(conversation.last_message_time).toLocaleTimeString(
+                      "en-US",
+                      {
+                        hour12: false,
+                        hour: "numeric",
+                        minute: "numeric",
+                      }
+                    )
+                  : new Date(
+                      new Date(
+                        conversation.last_message_time.split("T")[0]
+                      ).toLocaleDateString()
+                    ) > new Date().setDate(new Date().getDate() - 2)
+                  ? "yesterday"
+                  : new Date(
+                      conversation.last_message_time
+                    ).toLocaleDateString()
               }}
             </q-item-label>
             <q-icon name="keyboard_arrow_down" />
@@ -154,6 +156,91 @@
       :handleChat="setActiveChatByUsername"
       :addRoom="addRoom"
     />
+
+    <ProfileComponent v-if="profileDrawerOpen" :handleClose="handleClose" />
+  </q-drawer>
+
+  <q-drawer
+    v-model="rightDrawerOpen"
+    :width="style.width > 1100 ? 350 : 300"
+    side="right"
+    bordered
+  >
+    <q-toolbar class="bg-grey-3 text-black">
+      <q-btn
+        round
+        flat
+        icon="close"
+        class="WAL__drawer-open q-mr-sm"
+        @click="rightDrawerOpen = false"
+      />
+      <span class="q-subtitle-1">Search Messages</span>
+    </q-toolbar>
+    <q-input
+      dense
+      label-color="grey-3"
+      input-class="text-black"
+      class="q-ma-md"
+      placeholder="Search..."
+      standout="bg-grey-3"
+      v-on:focus="backSearch = true"
+      v-on:blur="
+        searchMessages !== '' ? (backSearch = true) : (backSearch = false)
+      "
+      v-model="searchMessages"
+    >
+      <template v-if="backSearch == true" v-slot:before>
+        <q-icon
+          color="black"
+          name="arrow_back"
+          class="cursor-pointer bg-grey-3 q-pa-sm"
+          style="border-radius: 100%"
+          @click="
+            () => {
+              backSearch = false;
+              searchMessages = '';
+              resultSearchMessages = [];
+            }
+          "
+        />
+      </template>
+      <template v-else v-slot:before>
+        <q-icon
+          color="black"
+          name="search"
+          class="cursor-pointer bg-grey-3 q-pa-sm"
+          style="border-radius: 100%"
+        />
+      </template>
+    </q-input>
+    <q-scroll-area style="height: calc(100% - 122px)">
+      <q-list padding>
+        <q-item
+          clickable
+          v-ripple
+          v-for="(val, index) in resultSearchMessages"
+          :key="index"
+          @click="scrollTo(val.id)"
+        >
+          <q-item-section>
+            <q-item-label>{{
+              new Date(val.date).toLocaleDateString()
+            }}</q-item-label>
+            <q-item-label caption>
+              <template v-for="(msg, index) in val.messages" :key="index">
+                {{
+                  msg.toUpperCase() === searchMessages.toUpperCase() ? "" : msg
+                }}<span
+                  class="text-teal text-bold"
+                  v-if="msg.toUpperCase() === searchMessages.toUpperCase()"
+                  >{{ msg }}</span
+                >
+              </template>
+            </q-item-label>
+          </q-item-section>
+        </q-item>
+      </q-list>
+    </q-scroll-area>
   </q-drawer>
 
   <q-page-container
@@ -296,7 +383,6 @@
     <q-form style="width: 100%" @submit.prevent="sendMessage">
       <q-toolbar class="bg-grey-3 text-black row">
         <q-btn round flat icon="insert_emoticon" class="q-mr-sm" />
-
         <q-input
           color="teal"
           rounded
@@ -318,6 +404,28 @@
       </q-toolbar>
     </q-form>
   </q-footer>
+  <q-dialog v-model="errorSocket" persistent>
+    <q-card>
+      <q-card-section class="row items-center">
+        <q-avatar icon="signal_wifi_off" color="teal" text-color="white" />
+        <span class="q-ml-sm"
+          >You are currently not connected to any network.</span
+        >
+      </q-card-section>
+
+      <q-card-actions align="right">
+        <q-btn flat label="Cancel" color="teal" v-close-popup />
+        <q-btn
+          flat
+          :loading="loadingSocket"
+          label="Reconnect"
+          color="teal"
+          @click="handleReconnectSocket"
+          v-close-popup
+        />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
 </template>
 
 <script setup>
@@ -336,14 +444,22 @@ import { useChat } from "../stores/chat";
 import MessageList from "./ChatView.vue";
 import axiosInstance from "../axios";
 import AddComponent from "../components/AddComponent.vue";
+import ProfileComponent from "../components/ProfileComponent.vue";
 import { useQuasar } from "quasar";
 
 const rooms = ref([]);
 const $q = useQuasar();
 const leftDrawerOpen = ref(false);
+const rightDrawerOpen = ref(false);
 const addDrawerOpen = ref(false);
+const profileDrawerOpen = ref(false);
+const backSearch = ref(false);
+const errorSocket = ref(false);
+const loadingSocket = ref(false);
 const search = ref("");
 const message = ref("");
+const searchMessages = ref("");
+const resultSearchMessages = ref([]);
 const currentConversationIndex = ref(null);
 const conversations = computed(() => {
   const temp = rooms.value;
@@ -357,7 +473,7 @@ const currentConversation = computed(() => {
 const auth = useAuthentication();
 const { user } = storeToRefs(auth);
 const chat = useChat();
-const { socket } = storeToRefs(chat);
+const { socket, messages } = storeToRefs(chat);
 const { setSocket } = chat;
 const { logout } = auth;
 const newMsg = ref(null);
@@ -377,6 +493,7 @@ const handleClose = (drawer) => {
   drawer.classList.add("keluar");
   setTimeout(() => {
     addDrawerOpen.value = false;
+    profileDrawerOpen.value = false;
   }, 550);
 };
 
@@ -406,7 +523,16 @@ const fetchData = async () => {
     });
     rooms.value = result.data.chatroom;
   } catch (err) {
-    console.log(err);
+    if (err.response.status === 401) {
+      logout();
+    }
+  }
+};
+
+const scrollTo = (id) => {
+  const el = document.getElementById(id);
+  if (el) {
+    el.scrollIntoView();
   }
 };
 
@@ -415,6 +541,11 @@ onBeforeMount(() => {
     setSocket(user.value.token);
   }
 });
+
+const handleReconnectSocket = () => {
+  loadingSocket.value = true;
+  setSocket(user.value.token);
+};
 
 const sendMessage = () => {
   socket.value.send(
@@ -435,15 +566,14 @@ onMounted(() => {
 watch(socket, () => {
   if (socket.value !== null) {
     socket.value.onopen = function (evt) {
-      console.log("socket succesfull connected", evt);
+      loadingSocket.value = false;
     };
     socket.value.onclose = function (evt) {
-      console.log("socket is closed", evt);
       socket.value = null;
+      errorSocket.value = true;
     };
     socket.value.onmessage = function (evt) {
       const event = JSON.parse(evt.data);
-      console.log(event);
       event.forEach((result) => {
         if (result.type === "room") {
           rooms.value = rooms.value.map((chat) =>
@@ -458,12 +588,6 @@ watch(socket, () => {
           );
         }
 
-        // if (result.type === "owned") {
-        //   rooms.value = rooms.value.map((chat) =>
-        //     console.log(result.data.SenderName == chat.ReceiveName)
-        //   );
-        // }
-
         if (result.type === "message") {
           newMsg.value = result.data;
         }
@@ -471,12 +595,70 @@ watch(socket, () => {
     };
     socket.value.onerror = function (evt) {
       console.log("ERROR: " + evt.data);
+      errorSocket.value = true;
     };
   }
 });
 
+watch(searchMessages, () => {
+  if (searchMessages.value !== "" && searchMessages.value.length > 1) {
+    const temp = messages.value;
+
+    const start = temp.map((val, index) => {
+      return {
+        ...val,
+        id: val.sent_time.split("T")[0] + "chat" + index,
+      };
+    });
+
+    const modif = start.filter(
+      (val) =>
+        val.message
+          .toUpperCase()
+          .indexOf(searchMessages.value.toUpperCase()) !== -1
+    );
+
+    const end = modif.map((val) => {
+      const temp = [];
+      const arr = val.message.split(/(\s+)/);
+
+      arr.forEach((val) => {
+        if (
+          val.toUpperCase().indexOf(searchMessages.value.toUpperCase()) !== -1
+        ) {
+          const idx = val
+            .toUpperCase()
+            .indexOf(searchMessages.value.toUpperCase());
+
+          if (idx > 0) {
+            temp.push(val.slice(0, idx));
+            temp.push(val.slice(idx, idx + searchMessages.value.length));
+            temp.push(val.slice(idx + searchMessages.value.length, val.length));
+          } else {
+            temp.push(val.slice(idx, idx + searchMessages.value.length));
+            temp.push(val.slice(idx + searchMessages.value.length, val.length));
+          }
+        } else {
+          temp.push(val);
+        }
+      });
+      return {
+        date: val.sent_time.split("T")[0],
+        messages: temp,
+        id: val.id,
+      };
+    });
+    console.log(end);
+    resultSearchMessages.value = end;
+  } else {
+    resultSearchMessages.value = [];
+  }
+});
+
 onUnmounted(() => {
-  socket.value.close();
+  if (socket.value !== null) {
+    socket.value.close();
+  }
 });
 </script>
 

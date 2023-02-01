@@ -30,7 +30,7 @@
       </q-input>
     </q-toolbar>
 
-    <q-scroll-area style="height: calc(100% - 100px)">
+    <q-scroll-area style="height: calc(100% - 157px)">
       <q-list v-if="people.length > 0">
         <div
           v-for="(conversation, index) in people"
@@ -66,12 +66,12 @@
 </template>
 <script setup>
 import { storeToRefs } from "pinia";
-import { ref, watch, computed } from "vue";
+import { ref, watch, computed, toRefs } from "vue";
 import axiosInstance from "../axios";
 import { useAuthentication } from "../stores/authentication";
 
 const props = defineProps(["handleClose", "chatroom", "handleChat", "addRoom"]);
-
+const { chatroom } = toRefs(props);
 const drawer = ref(null);
 const search = ref("");
 const people = ref([]);
@@ -79,7 +79,7 @@ const isFriends = computed(() => {
   let friend = people.value;
   if (friend.length > 0) {
     let flag = false;
-    props.chatroom.forEach((e) => {
+    chatroom.value.forEach((e) => {
       if (e.ReceiveName == friend[0].username) {
         flag = true;
       }
@@ -92,6 +92,7 @@ const isFriends = computed(() => {
 
 const auth = useAuthentication();
 const { user } = storeToRefs(auth);
+const { logout } = auth;
 
 // eslint-disable-next-line vue/no-setup-props-destructure
 const { handleClose } = props;
@@ -121,7 +122,9 @@ const handleAdd = async () => {
     });
     handleClose(drawer.value);
   } catch (err) {
-    console.log(err);
+    if (err.response.status === 401) {
+      logout();
+    }
   }
 };
 
@@ -139,10 +142,13 @@ watch(search, () => {
             },
           }
         );
+        console.log(result.data.users);
         people.value = [result.data.users];
       } catch (err) {
         people.value = [];
-        console.log(err);
+        if (err.response.status === 401) {
+          logout();
+        }
       }
     }, 1000);
   } else {

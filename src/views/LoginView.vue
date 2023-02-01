@@ -56,12 +56,16 @@
 </template>
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { useAuthentication } from "../stores/authentication";
 import { useQuasar } from "quasar";
 
 const username = ref("");
 const pass = ref("");
+const validation = ref({
+  isUsername: true,
+  isPassword: true,
+});
 const auth = useAuthentication();
 const { isLoading } = storeToRefs(auth);
 const { login } = auth;

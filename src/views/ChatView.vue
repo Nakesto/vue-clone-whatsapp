@@ -13,6 +13,7 @@
           "
         ></q-chat-message>
         <q-chat-message
+          :id="chats.date + 'chat' + index"
           v-for="(chat, index) in chats.messages"
           :key="index"
           :name="
@@ -26,9 +27,11 @@
           :text="[chat.message]"
           :sent="chat.SenderName === user.user.username"
           :stamp="
-            new Date(chat.sent_time).getHours() +
-            ':' +
-            new Date(chat.sent_time).getMinutes()
+            new Date(chat.sent_time).toLocaleTimeString('en-US', {
+              hour12: false,
+              hour: 'numeric',
+              minute: 'numeric',
+            })
           "
         ></q-chat-message>
       </div>
@@ -40,6 +43,7 @@ import { storeToRefs } from "pinia";
 import { watchEffect, toRefs, ref, computed, watch } from "vue";
 import axiosInstance from "../axios";
 import { useAuthentication } from "../stores/authentication";
+import { useChat } from "../stores/chat";
 
 const props = defineProps({
   receiver: Object,
@@ -63,8 +67,11 @@ const monthNames = [
 
 const { receiver, newMessage } = toRefs(props);
 const auth = useAuthentication();
+const chat = useChat();
+
 const { user } = storeToRefs(auth);
-const messages = ref([]);
+const { setMessages } = chat;
+const { groupMessage, messages } = storeToRefs(chat);
 const container = ref(null);
 
 const getMessage = async () => {
@@ -77,42 +84,19 @@ const getMessage = async () => {
         },
       }
     );
-    messages.value = result.data.chats;
+    setMessages(result.data.chats);
   } catch (err) {
-    console.log(err);
+    if (err.response.status === 401) {
+      logout();
+    }
   }
 };
-
-const groupMessage = computed(() => {
-  if (messages.value.length > 0) {
-    const groups = messages.value.reduce((groups, chat) => {
-      const date = chat.sent_time.split("T")[0];
-      if (!groups[date]) {
-        groups[date] = [];
-      }
-      groups[date].push(chat);
-      return groups;
-    }, {});
-
-    // Edit: to add it in the array format instead
-    const groupArrays = Object.keys(groups).map((date) => {
-      return {
-        date,
-        messages: groups[date],
-      };
-    });
-
-    return groupArrays;
-  }
-
-  return [];
-});
 
 watch(newMessage, () => {
   if (newMessage.value !== null) {
     const coba = messages.value;
     coba.push(newMessage.value);
-    messages.value = coba;
+    setMessages(coba);
   }
 });
 

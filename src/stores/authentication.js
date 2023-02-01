@@ -2,6 +2,7 @@ import { ref } from "vue";
 import { defineStore } from "pinia";
 import router from "../router";
 import axiosInstance from "../axios";
+import { useQuasar } from "quasar";
 
 export const useAuthentication = defineStore("counter", () => {
   const isAuthenticate = ref(
@@ -18,6 +19,7 @@ export const useAuthentication = defineStore("counter", () => {
   const isInitial = ref(true);
   const isLoading = ref(false);
   const error = ref();
+  const $q = useQuasar();
 
   const login = async (username, password) => {
     isLoading.value = true;
@@ -35,11 +37,15 @@ export const useAuthentication = defineStore("counter", () => {
             user: result.data.user,
           };
           isAuthenticate.value = true;
-          router.push("/");
+          router.replace("/");
         }, 500);
       }
     } catch (err) {
       isAuthenticate.value = false;
+      $q.notify({
+        type: "negative",
+        message: "Username or Password not correct",
+      });
     } finally {
       setTimeout(() => {
         isLoading.value = false;
@@ -57,11 +63,14 @@ export const useAuthentication = defineStore("counter", () => {
       const result = await axiosInstance.post("/register", form);
       if (result.status === 200) {
         setTimeout(() => {
-          router.push("/login");
+          router.replace("/login");
         }, 500);
       }
     } catch (err) {
-      console.log(err);
+      $q.notify({
+        type: "negative",
+        message: "Registration failed",
+      });
     } finally {
       setTimeout(() => {
         isLoading.value = false;
@@ -96,7 +105,16 @@ export const useAuthentication = defineStore("counter", () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     isAuthenticate.value = false;
-    router.push("/login");
+    router.replace("/login");
+  };
+
+  const changeProfile = (key, value) => {
+    const temp = { ...user.value.user, [key]: value };
+    user.value = {
+      token: user.value.token,
+      user: temp,
+    };
+    localStorage.setItem("user", JSON.stringify(temp));
   };
 
   return {
@@ -110,5 +128,6 @@ export const useAuthentication = defineStore("counter", () => {
     login,
     logout,
     register,
+    changeProfile,
   };
 });
