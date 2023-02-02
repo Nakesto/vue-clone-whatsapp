@@ -2,14 +2,8 @@
 import { createRouter, createWebHistory } from "vue-router";
 import { useAuthentication } from "../stores/authentication";
 import LoginView from "../views/LoginView.vue";
-
-const Kosong = {
-  template: `
-    <div>
-      Kosong
-    </div>
-  `,
-};
+import RegisterView from "../views/RegisterView.vue";
+import HomeView from "../views/HomeView.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -17,7 +11,7 @@ const router = createRouter({
     {
       path: "/login",
       name: "login",
-      component: () => import("../views/LoginView.vue"),
+      component: LoginView,
       meta: {
         requiresAuth: false,
       },
@@ -25,7 +19,7 @@ const router = createRouter({
     {
       path: "/register",
       name: "register",
-      component: () => import("../views/RegisterView.vue"),
+      component: RegisterView,
       meta: {
         requiresAuth: false,
       },
@@ -33,7 +27,7 @@ const router = createRouter({
     {
       path: "/",
       name: "home",
-      component: () => import("../views/HomeView.vue"),
+      component: HomeView,
       meta: {
         requiresAuth: true,
       },
@@ -44,7 +38,7 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const auth = useAuthentication();
   const { isAuthenticate } = auth;
-  console.log(to.path);
+
   if (to.meta.requiresAuth && !isAuthenticate) {
     next("/login");
   } else if (!to.meta.requiresAuth && isAuthenticate) {
