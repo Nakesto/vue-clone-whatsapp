@@ -551,17 +551,6 @@ const fetchData = async () => {
         Authorization: `Bearer ${user.value.token}`,
       },
     });
-    console.log(result.data.chatroom[0].last_message_time);
-    console.log(
-      new Date(
-        new Date(result.data.chatroom[0].last_message_time)
-          .toLocaleDateString()
-          .split("T")[0]
-      ) >
-        new Date(
-          new Date(Date.now() - 864e5).toLocaleDateString().split("T")[0]
-        )
-    );
     rooms.value = result.data.chatroom;
   } catch (err) {
     if (err.response.status === 401) {
