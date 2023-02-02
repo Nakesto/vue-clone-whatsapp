@@ -30,7 +30,9 @@ export const useChat = defineStore("chat", () => {
   });
 
   const setSocket = (token) => {
-    socket.value = new WebSocket("ws://localhost:8080/api/ws?token=" + token);
+    socket.value = new WebSocket(
+      `ws://${import.meta.env.VITE_BACKEND_URL}/api/ws?token=` + token
+    );
   };
 
   const setMessages = (chats) => {
