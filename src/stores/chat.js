@@ -30,9 +30,15 @@ export const useChat = defineStore("chat", () => {
   });
 
   const setSocket = (token) => {
-    socket.value = new WebSocket(
-      `wss://${import.meta.env.VITE_BACKEND_HOST}/api/ws?token=` + token
-    );
+    if (import.meta.env.VITE_TYPE === "production") {
+      socket.value = new WebSocket(
+        `wss://${import.meta.env.VITE_BACKEND_HOST}/api/ws?token=` + token
+      );
+    } else {
+      socket.value = new WebSocket(
+        `ws://${import.meta.env.VITE_BACKEND_HOST}/api/ws?token=` + token
+      );
+    }
   };
 
   const setMessages = (chats) => {

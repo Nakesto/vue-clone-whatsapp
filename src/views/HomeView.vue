@@ -27,9 +27,6 @@
       <q-btn round flat icon="more_vert">
         <q-menu auto-close :offset="[110, 0]">
           <q-list style="min-width: 150px">
-            <q-item clickable @click="">
-              <q-item-section>Clear Messages</q-item-section>
-            </q-item>
             <q-item clickable @click="currentConversationIndex = null">
               <q-item-section>Close Chat</q-item-section>
             </q-item>
@@ -155,6 +152,7 @@
       :chatroom="conversations"
       :handleChat="setActiveChatByUsername"
       :addRoom="addRoom"
+      :toProfile="transitionToProfile"
     />
 
     <ProfileComponent v-if="profileDrawerOpen" :handleClose="handleClose" />
@@ -512,6 +510,13 @@ const addRoom = (data) => {
   const temp = rooms.value;
   temp.push(data);
   rooms.value = temp;
+};
+
+const transitionToProfile = (drawer) => {
+  handleClose(drawer);
+  setTimeout(() => {
+    profileDrawerOpen.value = true;
+  }, 600);
 };
 
 const fetchData = async () => {

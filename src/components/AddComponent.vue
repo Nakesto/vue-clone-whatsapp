@@ -50,6 +50,12 @@
             @click="handleChat(conversation.username, drawer)"
             >Chat</q-btn
           >
+          <q-btn
+            v-else-if="conversation.username === user.user.username"
+            color="teal"
+            @click="handleToProfile"
+            >Profile</q-btn
+          >
           <q-btn v-else color="teal" @click="handleAdd">Add</q-btn>
         </div>
       </q-list>
@@ -70,7 +76,13 @@ import { ref, watch, computed, toRefs } from "vue";
 import axiosInstance from "../axios";
 import { useAuthentication } from "../stores/authentication";
 
-const props = defineProps(["handleClose", "chatroom", "handleChat", "addRoom"]);
+const props = defineProps([
+  "handleClose",
+  "chatroom",
+  "handleChat",
+  "addRoom",
+  "toProfile",
+]);
 const { chatroom } = toRefs(props);
 const drawer = ref(null);
 const search = ref("");
@@ -126,6 +138,10 @@ const handleAdd = async () => {
       logout();
     }
   }
+};
+
+const handleToProfile = () => {
+  props.toProfile(drawer.value);
 };
 
 watch(search, () => {
