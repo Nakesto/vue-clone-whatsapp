@@ -30,7 +30,6 @@ export const useChat = defineStore("chat", () => {
   });
 
   const setSocket = (token) => {
-    console.log(import.meta.env.VITE_TYPE);
     if (import.meta.env.VITE_TYPE == "production") {
       socket.value = new WebSocket(
         `wss://${import.meta.env.VITE_BACKEND_HOST}/api/ws?token=` + token
