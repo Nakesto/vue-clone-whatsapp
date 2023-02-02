@@ -31,7 +31,7 @@ export const useChat = defineStore("chat", () => {
 
   const setSocket = (token) => {
     socket.value = new WebSocket(
-      `ws://${import.meta.env.VITE_BACKEND_URL}/api/ws?token=` + token
+      `wss://${import.meta.env.VITE_BACKEND_URL}/api/ws?token=` + token
     );
   };
 
