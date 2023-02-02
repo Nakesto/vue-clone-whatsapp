@@ -137,6 +137,7 @@ const handleAdd = async () => {
     if (err.response.status === 401) {
       logout();
     }
+    console.log(err);
   }
 };
 

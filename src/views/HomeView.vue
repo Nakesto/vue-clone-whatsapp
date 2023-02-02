@@ -30,7 +30,10 @@
             <q-item clickable @click="currentConversationIndex = null">
               <q-item-section>Close Chat</q-item-section>
             </q-item>
-            <q-item clickable @click="">
+            <q-item
+              clickable
+              @click="deleteRoom(currentConversation.ReceiveName)"
+            >
               <q-item-section>Delete Chat</q-item-section>
             </q-item>
           </q-list>
@@ -109,9 +112,9 @@
             <q-item-label caption>
               {{
                 new Date(
-                  new Date(
-                    conversation.last_message_time.split("T")[0]
-                  ).toLocaleDateString()
+                  new Date(conversation.last_message_time)
+                    .toLocaleDateString()
+                    .split("T")[0]
                 ) >
                 new Date(
                   new Date(Date.now() - 864e5)
@@ -127,9 +130,9 @@
                       }
                     )
                   : new Date(
-                      new Date(
-                        conversation.last_message_time.split("T")[0]
-                      ).toLocaleDateString()
+                      new Date(conversation.last_message_time)
+                        .toLocaleDateString()
+                        .split("T")[0]
                     ) > new Date().setDate(new Date().getDate() - 2)
                   ? "yesterday"
                   : new Date(
@@ -519,6 +522,28 @@ const transitionToProfile = (drawer) => {
   }, 600);
 };
 
+const deleteRoom = async (name) => {
+  try {
+    const result = await axiosInstance.delete("/api/delchatroom", {
+      headers: {
+        Authorization: `Bearer ${user.value.token}`,
+      },
+      data: {
+        receiver: name,
+      },
+    });
+
+    if (result.status === 200) {
+      rooms.value = rooms.value.filter((val) => val.ReceiveName !== name);
+      currentConversationIndex.value = null;
+    }
+  } catch (err) {
+    if (err.response.status === 401) {
+      logout();
+    }
+  }
+};
+
 const fetchData = async () => {
   try {
     const result = await axiosInstance.get("/api/chatroom", {
@@ -526,6 +551,17 @@ const fetchData = async () => {
         Authorization: `Bearer ${user.value.token}`,
       },
     });
+    console.log(result.data.chatroom[0].last_message_time);
+    console.log(
+      new Date(
+        new Date(result.data.chatroom[0].last_message_time)
+          .toLocaleDateString()
+          .split("T")[0]
+      ) >
+        new Date(
+          new Date(Date.now() - 864e5).toLocaleDateString().split("T")[0]
+        )
+    );
     rooms.value = result.data.chatroom;
   } catch (err) {
     if (err.response.status === 401) {
